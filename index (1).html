@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>QuizBlast 🎉</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ===== SCREENS ===== -->
+
+<!-- 1. HOME -->
+<div id="screen-home" class="screen active">
+  <div class="home-bg"></div>
+  <div class="home-content">
+    <div class="logo">⚡ QuizBlast</div>
+    <p class="tagline">Kahoot шиг — бүгд үнэгүй!</p>
+    <div class="home-btns">
+      <button class="btn btn-play" onclick="App.goTo('screen-join')">🎮 Тоглох</button>
+      <button class="btn btn-host" onclick="App.goTo('screen-host-menu')">🎯 Хост болох</button>
+      <button class="btn btn-create" onclick="App.goTo('screen-editor')">✏️ Quiz үүсгэх</button>
+    </div>
+  </div>
+</div>
+
+<!-- 2. JOIN -->
+<div id="screen-join" class="screen">
+  <button class="back-btn" onclick="App.goTo('screen-home')">← Буцах</button>
+  <div class="center-box">
+    <h2>🎮 Тоглоомд нэгдэх</h2>
+    <input id="join-code" class="big-input" placeholder="PIN код оруулна уу" maxlength="6" oninput="this.value=this.value.replace(/\D/g,'')"/>
+    <input id="join-name" class="big-input" placeholder="Таны нэр" maxlength="20"/>
+    <button class="btn btn-play" onclick="App.joinGame()">Нэгдэх ➜</button>
+    <p id="join-error" class="error-msg"></p>
+  </div>
+</div>
+
+<!-- 3. HOST MENU -->
+<div id="screen-host-menu" class="screen">
+  <button class="back-btn" onclick="App.goTo('screen-home')">← Буцах</button>
+  <div class="center-box" style="max-width:560px">
+    <h2>🎯 Хост болох</h2>
+    <p style="opacity:.7;margin-bottom:20px">Хэзний quiz сонгоно уу</p>
+
+    <!-- Import button -->
+    <div class="import-bar">
+      <label class="btn btn-import" title="JSON эсвэл Excel файл оруулна уу">
+        📂 Файлаас импорт
+        <input type="file" id="import-file-input" accept=".json,.xlsx,.xls,.csv" style="display:none" onchange="FileImport.handle(this)"/>
+      </label>
+      <button class="btn btn-export-all" onclick="FileImport.exportAll()" title="Бүх quiz-ийг JSON файл болгон татах">⬇ Бүгдийг татах</button>
+    </div>
+    <p id="import-msg" class="success-msg" style="margin-bottom:12px"></p>
+
+    <div id="quiz-list"></div>
+    <button class="btn btn-create" onclick="App.goTo('screen-editor')" style="margin-top:16px">+ Шинэ Quiz үүсгэх</button>
+  </div>
+</div>
+
+<!-- 4. LOBBY (Host) -->
+<div id="screen-lobby" class="screen">
+  <div class="lobby-header">
+    <span class="lobby-title">🎯 Lobby</span>
+    <span class="quiz-name-label" id="lobby-quiz-name"></span>
+  </div>
+  <div class="pin-display">
+    <span>PIN:</span>
+    <span id="lobby-pin" class="pin-number">------</span>
+  </div>
+  <p class="lobby-hint">Найзуудаа урьж, PIN кодоо хуваалц!</p>
+  <div id="player-list" class="player-list"></div>
+  <button id="start-game-btn" class="btn btn-play start-big" onclick="App.startGame()">▶ Тоглоом эхлүүлэх</button>
+</div>
+
+<!-- 5. WAITING (Player) -->
+<div id="screen-waiting" class="screen">
+  <div class="waiting-anim">⏳</div>
+  <h2 id="waiting-name"></h2>
+  <p>Хост тоглоом эхлүүлэхийг хүлээж байна...</p>
+  <div class="pulse-ring"></div>
+</div>
+
+<!-- 6. QUESTION (Host display) -->
+<div id="screen-question" class="screen">
+  <div class="q-header">
+    <span id="q-num"></span>
+    <div id="q-timer-bar"><div id="q-timer-fill"></div></div>
+    <span id="q-timer-text"></span>
+  </div>
+  <div id="q-text" class="q-text"></div>
+  <div id="q-answers" class="q-answers"></div>
+  <div id="q-stats" class="q-stats hidden"></div>
+</div>
+
+<!-- 7. ANSWER (Player) -->
+<div id="screen-answer" class="screen">
+  <div class="q-header small">
+    <span id="pa-num"></span>
+    <div id="pa-timer-bar"><div id="pa-timer-fill"></div></div>
+    <span id="pa-timer-text"></span>
+  </div>
+  <p id="pa-question" class="pa-question"></p>
+  <div id="pa-choices" class="pa-choices"></div>
+  <div id="pa-result" class="pa-result hidden"></div>
+</div>
+
+<!-- 8. LEADERBOARD -->
+<div id="screen-leaderboard" class="screen">
+  <h2 class="lb-title">🏆 Дүн</h2>
+  <div id="lb-list" class="lb-list"></div>
+  <div class="lb-btns">
+    <button id="next-q-btn" class="btn btn-play" onclick="App.nextQuestion()">Дараагийн асуулт ➜</button>
+    <button id="finish-btn" class="btn btn-host hidden" onclick="App.finishGame()">🏁 Тоглоом дуусгах</button>
+  </div>
+</div>
+
+<!-- 9. FINAL -->
+<div id="screen-final" class="screen">
+  <div class="final-confetti" id="confetti-container"></div>
+  <h2 class="final-title">🎉 Тоглоом дууслаа!</h2>
+  <div id="final-list" class="lb-list"></div>
+  <button class="btn btn-play" style="margin-top:24px" onclick="App.goTo('screen-home')">🏠 Нүүр хуудас</button>
+</div>
+
+<!-- 10. EDITOR -->
+<div id="screen-editor" class="screen">
+  <button class="back-btn" onclick="App.goTo('screen-home')">← Буцах</button>
+  <div class="editor-wrap">
+    <h2>✏️ Quiz Үүсгэх</h2>
+
+    <!-- File import inside editor too -->
+    <div class="editor-import-row">
+      <label class="btn btn-import">
+        📂 Файлаас оруулах
+        <input type="file" id="editor-file-input" accept=".json,.xlsx,.xls,.csv" style="display:none" onchange="FileImport.handleEditor(this)"/>
+      </label>
+      <span class="import-hint">JSON · Excel · CSV дэмжигдэнэ</span>
+    </div>
+    <p id="editor-import-msg" class="success-msg"></p>
+
+    <input id="quiz-title" class="big-input" placeholder="Quiz нэр (жишээ: Монгол түүх)" maxlength="50"/>
+    <div id="questions-editor"></div>
+    <div class="editor-bottom-btns">
+      <button class="btn btn-secondary" onclick="Editor.addQuestion()">+ Асуулт нэмэх</button>
+      <button class="btn btn-play" onclick="Editor.save()">💾 Хадгалах</button>
+      <button class="btn btn-export-quiz" onclick="Editor.exportCurrent()">⬇ JSON татах</button>
+    </div>
+    <p id="editor-msg" class="success-msg"></p>
+
+    <!-- Format guide -->
+    <div class="format-guide">
+      <details>
+        <summary>📋 Файлын формат харах</summary>
+        <div class="format-body">
+          <p><strong>JSON формат:</strong></p>
+          <pre>{
+  "title": "Quiz нэр",
+  "questions": [
+    {
+      "text": "Асуултын текст",
+      "answers": ["A","B","C","D"],
+      "correct": 0,
+      "time": 20
+    }
+  ]
+}</pre>
+          <p style="margin-top:14px"><strong>Excel / CSV формат:</strong></p>
+          <p style="opacity:.7;font-size:.9rem">Баганууд: <code>question | answer1 | answer2 | answer3 | answer4 | correct (1-4) | time</code></p>
+          <button class="btn btn-secondary" style="margin-top:10px;font-size:.85rem;padding:8px 16px" onclick="FileImport.downloadTemplate()">⬇ Excel загвар татах</button>
+        </div>
+      </details>
+    </div>
+  </div>
+</div>
+
+<!-- ── DRAG DROP OVERLAY ── -->
+<div id="drop-overlay" class="drop-overlay hidden">
+  <div class="drop-box">
+    <div class="drop-icon">📂</div>
+    <p>Файлаа энд чирж тавина уу</p>
+    <p class="drop-sub">JSON · Excel · CSV</p>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="app.js"></script>
+<script src="fileimport.js"></script>
+</body>
+</html>
